@@ -8,12 +8,14 @@ import ReservationModal from '@/components/ReservationModal'
 import SettingsModal from '@/components/SettingsModal'
 
 export default function Home() {
-  const { viewMode, isResModalOpen, isSetModalOpen, fetchReservations } = useCalendarStore();
+  const { viewMode, isResModalOpen, isSetModalOpen, fetchReservations, fetchRooms, fetchCustomHolidays } = useCalendarStore();
 
-  // 화면이 켜지면 DB에서 예약 데이터를 가져옵니다!
+  // 화면이 켜지면 DB에서 모든 데이터를 가져옵니다.
   useEffect(() => {
     fetchReservations();
-  }, [fetchReservations]);
+    fetchRooms();
+    fetchCustomHolidays();
+  }, [fetchReservations, fetchRooms, fetchCustomHolidays]);
 
   return (
     <main className="h-screen flex flex-col p-6 max-w-7xl mx-auto overflow-hidden">
