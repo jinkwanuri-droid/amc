@@ -3,13 +3,13 @@ import { format } from 'date-fns';
 import { ChevronLeft, ChevronRight, Settings, Plus } from 'lucide-react';
 
 export default function Header() {
-  const { currentDate, viewMode, setViewMode, goNext, goPrev, goToday } = useCalendarStore();
+  const { currentDate, viewMode, setViewMode, goNext, goPrev, goToday, setResModalOpen, setSetModalOpen } = useCalendarStore();
 
   return (
-    <header className="flex items-center justify-between mb-8">
+    <header className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-6">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">AMC 회의실 예약</h1>
+          <h1 className="text-2xl font-bold tracking-tight">AMC 회의실 예약</h1>
           <p className="text-xs text-blue-500 font-semibold uppercase tracking-wider">AMC Meeting Room</p>
         </div>
         <div className="flex bg-white/50 backdrop-blur-md p-1 rounded-xl shadow-sm border border-white/60">
@@ -24,10 +24,11 @@ export default function Header() {
         <span className="text-lg font-bold w-32 text-center">{format(currentDate, 'yyyy년 M월')}</span>
       </div>
       <div className="flex items-center gap-3">
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/30 flex items-center gap-2 transition-all">
+        {/* 모달 열기 함수 연결 */}
+        <button onClick={() => setResModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/30 flex items-center gap-2 transition-all">
           <Plus size={18} /> 예약하기
         </button>
-        <button className="p-2.5 bg-white/60 hover:bg-white border border-white rounded-xl shadow-sm transition-all text-gray-600">
+        <button onClick={() => setSetModalOpen(true)} className="p-2.5 bg-white/60 hover:bg-white border border-white rounded-xl shadow-sm transition-all text-gray-600">
           <Settings size={20} />
         </button>
       </div>
