@@ -535,37 +535,55 @@ export function SettingsModal({ isOpen, onClose, rooms, holidays, onUpdateRooms,
 
   const handleAddRoom = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createRoom({
-      name: rName,
-      capacity: rCap,
-      color: rColor,
-      header_bg: `bg-${rColor}-500`,
-      accent_bg: `bg-${rColor}-50/50`,
-      border_color: `border-${rColor}-200`,
-      text_color: `text-${rColor}-700`,
-      order: rooms.length + 1
-    });
-    setRName(''); setRCap(4);
-    onUpdateRooms();
+    try {
+      await createRoom({
+        name: rName,
+        capacity: rCap,
+        color: rColor,
+        header_bg: `bg-${rColor}-500`,
+        accent_bg: `bg-${rColor}-50/50`,
+        border_color: `border-${rColor}-200`,
+        text_color: `text-${rColor}-700`,
+        order: rooms.length + 1
+      });
+      setRName(''); setRCap(4);
+      onUpdateRooms();
+    } catch (err: any) {
+      alert('회의실 추가 실패: ' + err.message);
+    }
   };
 
   const handleDelRoom = async (id: string) => {
     if (!window.confirm('회의실을 삭제하시겠습니까? 관련 예약도 모두 보이지 않게 될 수 있습니다.')) return;
-    await deleteRoom(id);
-    onUpdateRooms();
+    try {
+      await deleteRoom(id);
+      onUpdateRooms();
+    } catch (err: any) {
+      alert('삭제 실패: ' + err.message);
+    }
   };
 
   const handleAddHoliday = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hDate || !hName) return;
-    await fetch('/api/holidays', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: hDate, name: hName }) });
-    setHDate(''); setHName('');
-    onUpdateHolidays();
+    try {
+      const res = await fetch('/api/holidays', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: hDate, name: hName }) });
+      if (!res.ok) throw new Error('서버 통신 오류');
+      setHDate(''); setHName('');
+      onUpdateHolidays();
+    } catch (err: any) {
+      alert('공휴일 추가 실패: ' + err.message);
+    }
   };
 
   const handleDelHoliday = async (id: string) => {
-    await fetch(`/api/holidays/${id}`, { method: 'DELETE' });
-    onUpdateHolidays();
+    try {
+      const res = await fetch(`/api/holidays/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('서버 통신 오류');
+      onUpdateHolidays();
+    } catch (err: any) {
+      alert('삭제 실패: ' + err.message);
+    }
   };
 
   const colorData: {[key: string]: string} = {
