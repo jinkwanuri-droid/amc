@@ -26,3 +26,8 @@ model Reservation {
   room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
 }
+model CustomHoliday {
+  id    String   @id @default(cuid())
+  date  DateTime @unique
+  name  String
+}
