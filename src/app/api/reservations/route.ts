@@ -1,63 +1,30 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-// 1. 예약 목록 불러오기 (GET)
 export async function GET() {
-  try {
-    const reservations = await prisma.reservation.findMany({
-      include: { room: true },
-      orderBy: { startTime: 'asc' },
-    });
-    return NextResponse.json(reservations);
-  } catch (error) {
-    return NextResponse.json({ error: '데이터를 불러오는데 실패했습니다.' }, { status: 500 });
-  }
+  return NextResponse.json(await prisma.reservation.findMany({ include: { room: true }, orderBy: { startTime: 'asc' } }));
 }
 
-// 2. 새로운 예약 저장하기 (POST)
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { reserver, description, startTime, endTime, roomId } = body;
+  const { reserver, description, startTime, endTime, roomId } = await request.json();
+  const start = new Date(startTime); const end = new Date(endTime);
+  const overlapping = await prisma.reservation.findFirst({ where: { roomId, AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }] } });
+  if (overlapping) return NextResponse.json({ error: '해당 시각에는 이미 예약이 있습니다.' }, { status: 400 });
+  return NextResponse.json(await prisma.reservation.create({ data: { reserver, description, startTime: start, endTime: end, roomId } }));
+}
 
-    // 시간 변환
-    const start = new Date(startTime);
-    const end = new Date(endTime);
+// ⭐ 예약 수정 기능 (PUT) 추가
+export async function PUT(request: Request) {
+  const { id, reserver, description, startTime, endTime, roomId } = await request.json();
+  const start = new Date(startTime); const end = new Date(endTime);
+  const overlapping = await prisma.reservation.findFirst({ where: { id: { not: id }, roomId, AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }] } });
+  if (overlapping) return NextResponse.json({ error: '해당 시각에는 이미 예약이 있습니다.' }, { status: 400 });
+  return NextResponse.json(await prisma.reservation.update({ where: { id }, data: { reserver, description, startTime: start, endTime: end, roomId } }));
+}
 
-    // *안전장치: 아직 생성된 회의실이 없다면 '기본 회의실'을 자동으로 하나 만듭니다.
-    let targetRoomId = roomId;
-    if (!targetRoomId) {
-      let defaultRoom = await prisma.room.findFirst();
-      if (!defaultRoom) {
-        defaultRoom = await prisma.room.create({
-          data: { name: '대회의실', capacity: 12, color: '#3b82f6' } // 파란색
-        });
-      }
-      targetRoomId = defaultRoom.id;
-    }
-
-    // ⭐ 핵심: 중복 예약 검사 (기존 예약의 시작시간 < 새 종료시간 AND 기존 종료시간 > 새 시작시간)
-    const overlapping = await prisma.reservation.findFirst({
-      where: {
-        roomId: targetRoomId,
-        AND: [
-          { startTime: { lt: end } },
-          { endTime: { gt: start } }
-        ]
-      }
-    });
-
-    if (overlapping) {
-      return NextResponse.json({ error: '해당 시각에는 이미 예약이 있습니다.' }, { status: 400 });
-    }
-
-    // 예약 저장
-    const reservation = await prisma.reservation.create({
-      data: { reserver, description, startTime: start, endTime: end, roomId: targetRoomId },
-    });
-
-    return NextResponse.json(reservation);
-  } catch (error) {
-    return NextResponse.json({ error: '예약 저장에 실패했습니다.' }, { status: 500 });
-  }
+// ⭐ 예약 삭제 기능 (DELETE) 추가
+export async function DELETE(request: Request) {
+  const id = new URL(request.url).searchParams.get('id');
+  if (id) await prisma.reservation.delete({ where: { id } });
+  return NextResponse.json({ success: true });
 }
