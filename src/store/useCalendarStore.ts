@@ -17,14 +17,10 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   setViewMode: (mode) => set({ viewMode: mode }),
   setCurrentDate: (date) => set({ currentDate: date }),
   goNext: () => set((state) => ({
-    currentDate: state.viewMode === 'month' 
-      ? addMonths(state.currentDate, 1) 
-      : addWeeks(state.currentDate, 1)
+    currentDate: state.viewMode === 'month' ? addMonths(state.currentDate, 1) : addWeeks(state.currentDate, 1)
   })),
   goPrev: () => set((state) => ({
-    currentDate: state.viewMode === 'month' 
-      ? subMonths(state.currentDate, 1) 
-      : subWeeks(state.currentDate, 1)
+    currentDate: state.viewMode === 'month' ? subMonths(state.currentDate, 1) : subWeeks(state.currentDate, 1)
   })),
   goToday: () => set({ currentDate: new Date() })
 }));
