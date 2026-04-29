@@ -1,0 +1,6 @@
+{
+  "name": "Meeting Room Scheduler",
+  "description": "iOS 16 style meeting room reservation system. Features week/month views, Glassmorphism UI, real-time sync with SQLite DB.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
