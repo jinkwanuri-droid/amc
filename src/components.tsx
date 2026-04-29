@@ -75,6 +75,16 @@ interface LegendProps {
 }
 
 export function RoomLegend({ rooms, selectedRoomId, onSelectRoom }: LegendProps) {
+  if (rooms.length === 0) {
+    return (
+      <div className="flex justify-center p-4">
+        <p className="text-xs font-bold text-gray-400 bg-gray-100/50 px-6 py-3 rounded-2xl border border-dashed border-gray-200 uppercase tracking-widest">
+          회의실을 먼저 등록해주세요 (우측 상단 설정)
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-wrap gap-2 md:gap-3 justify-center md:justify-end px-4 md:px-0">
       <button 
@@ -82,15 +92,18 @@ export function RoomLegend({ rooms, selectedRoomId, onSelectRoom }: LegendProps)
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-2xl transition-all border shadow-sm", 
           !selectedRoomId 
-            ? "bg-blue-600 border-blue-600 text-white shadow-blue-200" 
+            ? "bg-gray-900 border-gray-900 text-white shadow-lg" 
             : "bg-white border-gray-200 hover:bg-gray-50 text-gray-500"
         )}
       >
-        <div className={cn("w-2.5 h-2.5 rounded-full", !selectedRoomId ? "bg-white" : "bg-gray-300")}></div>
-        <span className="text-xs font-bold">전체보기</span>
+        <div className={cn("w-2 h-2 rounded-full", !selectedRoomId ? "bg-white animate-pulse" : "bg-gray-300")}></div>
+        <span className="text-xs font-bold uppercase tracking-tight">전체보기</span>
       </button>
       {rooms.map(room => {
-        const isActive = selectedRoomId === room.id;
+        const isIndividualActive = selectedRoomId === room.id;
+        const isAllActive = selectedRoomId === null;
+        const isActive = isIndividualActive || isAllActive;
+        
         // Map color to bg class
         const colorMap: {[key: string]: string} = {
           blue: 'bg-blue-500', indigo: 'bg-indigo-500', violet: 'bg-violet-500', 
@@ -107,10 +120,10 @@ export function RoomLegend({ rooms, selectedRoomId, onSelectRoom }: LegendProps)
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-2xl transition-all border shadow-sm", 
               isActive 
-                ? `${colorBg} border-transparent text-white shadow-lg` 
-                : "bg-white border-gray-200 hover:bg-gray-50 text-gray-600"
+                ? `${colorBg} border-transparent text-white ${isIndividualActive ? 'shadow-lg scale-105 z-10' : 'opacity-90'}` 
+                : "bg-white border-gray-200 hover:bg-gray-50 text-gray-400 opacity-60"
             )}
-            style={isActive ? { boxShadow: `0 8px 20px -4px rgba(0,0,0,0.15)` } : {}}
+            style={isIndividualActive ? { boxShadow: `0 8px 20px -4px rgba(0,0,0,0.2)` } : {}}
           >
             <div className={cn("w-2.5 h-2.5 rounded-full shadow-sm", isActive ? "bg-white" : colorBg)}></div>
             <span className="text-xs font-bold">{room.name}</span>
@@ -441,11 +454,17 @@ export function ReservationModal({ isOpen, onClose, defaultDate, defaultTime, ed
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">회의 날짜</label>
-              <div className="relative">
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/10 outline-none" />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none bg-gray-50 px-2 font-bold text-blue-500 text-sm">
-                  {format(parseISO(date), 'yyyy.MM.dd (EEE)', { locale: ko })}
+              <div className="relative group">
+                <div className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold flex items-center gap-3 transition-colors group-hover:border-gray-200">
+                  <CalendarIcon className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-700">{format(parseISO(date), 'yyyy.MM.dd (EEE)', { locale: ko })}</span>
                 </div>
+                <input 
+                  type="date" 
+                  value={date} 
+                  onChange={e => setDate(e.target.value)} 
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
               </div>
             </div>
           </div>
