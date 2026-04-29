@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useCalendarStore } from '@/store/useCalendarStore';
 import { startOfWeek, addDays, format, isToday, isSameDay, differenceInMinutes } from 'date-fns';
-import { getHolidays } from '@hyunseob/korean-holidays';
+import { getHolidays } from '@/lib/holidays';
 
 export default function WeekView() {
   const { currentDate, reservations } = useCalendarStore();
