@@ -12,6 +12,8 @@ export default function App() {
   const [customHolidays, setCustomHolidays] = useState<CustomHoliday[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   
+  const [debugInfo, setDebugInfo] = useState<{databaseConnected: boolean, dbProvider: string}>({ databaseConnected: false, dbProvider: 'Loading...' });
+  
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -23,14 +25,16 @@ export default function App() {
 
   const loadData = async () => {
     try {
-      const [resData, roomsData, holidaysData] = await Promise.all([
+      const [resData, roomsData, holidaysData, debug] = await Promise.all([
         fetchReservations(''),
         fetchRooms(),
         fetchHolidays(),
+        import('./shared').then(m => m.fetchDebugInfo())
       ]);
       setReservations(resData);
       setRooms(roomsData);
       setCustomHolidays(holidaysData);
+      setDebugInfo(debug);
     } catch (e) {
       console.error(e);
     }
@@ -143,8 +147,8 @@ export default function App() {
 
       <footer className="h-8 px-8 flex items-center justify-between text-[10px] text-gray-400 bg-white/30 backdrop-blur-sm border-t border-white/20 z-10 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-          Status: Relational Persistent Layer (Vercel Postgres/Neon)
+          <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", debugInfo.databaseConnected ? "bg-emerald-500" : "bg-orange-500")}></div>
+          Status: {debugInfo.dbProvider} {!debugInfo.databaseConnected && "(Persistence unavailable - requires DATABASE_URL)"}
         </div>
         <div>Last cloud sync: {format(new Date(), 'HH:mm:ss')}</div>
       </footer>
