@@ -1,6 +1,6 @@
 import { useCalendarStore } from '@/store/useCalendarStore';
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameMonth, isToday, isSameDay } from 'date-fns';
-import { getHolidays } from '@hyunseob/korean-holidays';
+import { getHolidays } from '@/lib/holidays';
 
 export default function MonthView() {
   const { currentDate, reservations } = useCalendarStore();
