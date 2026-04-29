@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useCalendarStore } from '@/store/useCalendarStore';
 import { Trash2, Check } from 'lucide-react';
 import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
-// 10가지 예쁜 컬러 팔레트
 const PRESET_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
 
 export default function SettingsModal() {
@@ -11,9 +11,10 @@ export default function SettingsModal() {
   const [activeTab, setActiveTab] = useState<'rooms' | 'holidays'>('rooms');
 
   const [roomName, setRoomName] = useState(''); const [capacity, setCapacity] = useState('4');
-  const [color, setColor] = useState(PRESET_COLORS[6]); // 기본 파란색
+  const [color, setColor] = useState(PRESET_COLORS[6]); 
 
-  const [holidayDate, setHolidayDate] = useState(''); const [holidayName, setHolidayName] = useState('');
+  const [holidayDate, setHolidayDate] = useState(format(new Date(), 'yyyy-MM-dd')); 
+  const [holidayName, setHolidayName] = useState('');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setSetModalOpen(false); };
@@ -32,7 +33,7 @@ export default function SettingsModal() {
   const handleAddHoliday = async (e: React.FormEvent) => {
     e.preventDefault();
     await fetch('/api/custom-holidays', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: holidayDate, name: holidayName }) });
-    setHolidayDate(''); setHolidayName(''); fetchCustomHolidays();
+    setHolidayDate(format(new Date(), 'yyyy-MM-dd')); setHolidayName(''); fetchCustomHolidays();
   };
   const handleDeleteHoliday = async (id: string) => {
     if (confirm('공휴일을 삭제하시겠습니까?')) { await fetch(`/api/custom-holidays?id=${id}`, { method: 'DELETE' }); fetchCustomHolidays(); }
@@ -54,18 +55,15 @@ export default function SettingsModal() {
             <div className="space-y-6">
               <form onSubmit={handleAddRoom} className="flex flex-col gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                 <div className="flex gap-2">
-                  <div className="flex-1"><label className="block text-xs font-bold text-gray-500 mb-1">회의실명</label><input required value={roomName} onChange={(e) => setRoomName(e.target.value)} type="text" className="w-full p-2 border rounded-lg text-sm" placeholder="예: 10층 대회의실" /></div>
-                  <div className="w-24"><label className="block text-xs font-bold text-gray-500 mb-1">수용인원(명)</label><input required value={capacity} onChange={(e) => setCapacity(e.target.value)} type="number" min="1" className="w-full p-2 border rounded-lg text-sm" /></div>
+                  <div className="flex-1"><label className="block text-xs font-bold text-gray-500 mb-1">회의실명</label><input required value={roomName} onChange={(e) => setRoomName(e.target.value)} type="text" className="w-full p-2.5 border rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 10층 대회의실" /></div>
+                  <div className="w-24"><label className="block text-xs font-bold text-gray-500 mb-1">수용인원(명)</label><input required value={capacity} onChange={(e) => setCapacity(e.target.value)} type="number" min="1" className="w-full p-2.5 border rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                   <button type="submit" className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold mt-[20px]">추가</button>
                 </div>
-                {/* 컬러 팔레트 */}
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-2">테마 컬러 (10종)</label>
                   <div className="flex gap-2">
                     {PRESET_COLORS.map(c => (
-                      <button key={c} type="button" onClick={() => setColor(c)} className="w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110" style={{ backgroundColor: c }}>
-                        {color === c && <Check size={14} color="white" />}
-                      </button>
+                      <button key={c} type="button" onClick={() => setColor(c)} className="w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110" style={{ backgroundColor: c }}>{color === c && <Check size={14} color="white" />}</button>
                     ))}
                   </div>
                 </div>
@@ -86,9 +84,15 @@ export default function SettingsModal() {
           ) : (
              <div className="space-y-6">
               <form onSubmit={handleAddHoliday} className="flex items-end gap-2 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <div className="w-40"><label className="block text-xs font-bold text-gray-500 mb-1">날짜</label><input required value={holidayDate} onChange={(e) => setHolidayDate(e.target.value)} type="date" className="w-full p-2 border rounded-lg text-sm" /></div>
-                <div className="flex-1"><label className="block text-xs font-bold text-gray-500 mb-1">공휴일명</label><input required value={holidayName} onChange={(e) => setHolidayName(e.target.value)} type="text" className="w-full p-2 border rounded-lg text-sm" placeholder="예: 회사 창립기념일" /></div>
-                <button type="submit" className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold h-[38px]">추가</button>
+                <div className="w-40">
+                  <label className="block text-xs font-bold text-gray-500 mb-1">날짜</label>
+                  <div className="relative">
+                    <input required value={holidayDate} onChange={(e) => setHolidayDate(e.target.value)} type="date" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                    <div className="w-full p-2.5 border rounded-lg text-sm font-medium bg-white text-gray-800">{format(new Date(holidayDate || new Date()), 'yyyy.MM.dd (E)', { locale: ko })}</div>
+                  </div>
+                </div>
+                <div className="flex-1"><label className="block text-xs font-bold text-gray-500 mb-1">공휴일명</label><input required value={holidayName} onChange={(e) => setHolidayName(e.target.value)} type="text" className="w-full p-2.5 border rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 회사 창립기념일" /></div>
+                <button type="submit" className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold h-[42px]">추가</button>
               </form>
               <div className="space-y-2">
                 {customHolidays.map(holiday => (
@@ -101,7 +105,7 @@ export default function SettingsModal() {
             </div>
           )}
         </div>
-        <div className="p-4 border-t border-gray-100 bg-white flex justify-end"><button onClick={() => setSetModalOpen(false)} className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition">닫기</button></div>
+        <div className="p-4 border-t border-gray-100 bg-white flex justify-end"><button onClick={() => setSetModalOpen(false)} className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xltransition">닫기</button></div>
       </div>
     </div>
   );
