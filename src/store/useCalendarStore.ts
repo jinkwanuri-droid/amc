@@ -6,13 +6,14 @@ interface CalendarState {
   setViewMode: (mode: 'month' | 'week') => void; setCurrentDate: (date: Date) => void;
   goNext: () => void; goPrev: () => void; goToday: () => void;
   
-  isResModalOpen: boolean; 
-  selectedDateForModal: Date | null;
-  selectedTimeForModal: string | null;
-  openResModal: (date?: Date, time?: string) => void;
-  closeResModal: () => void;
+  isResModalOpen: boolean; selectedDateForModal: Date | null; selectedTimeForModal: string | null;
+  openResModal: (date?: Date, time?: string) => void; closeResModal: () => void;
   
   isSetModalOpen: boolean; setSetModalOpen: (open: boolean) => void;
+
+  // ⭐ 예약 상세/수정 창 상태 추가
+  selectedReservation: any | null;
+  setSelectedReservation: (res: any | null) => void;
 
   reservations: any[]; fetchReservations: () => Promise<void>;
   rooms: any[]; fetchRooms: () => Promise<void>;
@@ -26,15 +27,15 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   goPrev: () => set((state) => ({ currentDate: state.viewMode === 'month' ? subMonths(state.currentDate, 1) : subWeeks(state.currentDate, 1) })),
   goToday: () => set({ currentDate: new Date() }),
   
-  isResModalOpen: false,
-  selectedDateForModal: null,
-  selectedTimeForModal: null,
+  isResModalOpen: false, selectedDateForModal: null, selectedTimeForModal: null,
   openResModal: (date, time) => set({ isResModalOpen: true, selectedDateForModal: date || null, selectedTimeForModal: time || null }),
   closeResModal: () => set({ isResModalOpen: false, selectedDateForModal: null, selectedTimeForModal: null }),
 
   isSetModalOpen: false, setSetModalOpen: (open) => set({ isSetModalOpen: open }),
 
-  reservations: [], fetchReservations: async () => { const res = await fetch('/api/reservations'); const data = await res.json(); set({ reservations: Array.isArray(data) ? data : [] }); },
-  rooms: [], fetchRooms: async () => { const res = await fetch('/api/rooms'); const data = await res.json(); set({ rooms: Array.isArray(data) ? data : [] }); },
-  customHolidays: [], fetchCustomHolidays: async () => { const res = await fetch('/api/custom-holidays'); const data = await res.json(); set({ customHolidays: Array.isArray(data) ? data : [] }); }
+  selectedReservation: null, setSelectedReservation: (res) => set({ selectedReservation: res }),
+
+  reservations: [], fetchReservations: async () => { const res = await fetch('/api/reservations'); set({ reservations: Array.isArray(await res.json()) ? await res.json() : [] }); },
+  rooms: [], fetchRooms: async () => { const res = await fetch('/api/rooms'); set({ rooms: Array.isArray(await res.json()) ? await res.json() : [] }); },
+  customHolidays: [], fetchCustomHolidays: async () => { const res = await fetch('/api/custom-holidays'); set({ customHolidays: Array.isArray(await res.json()) ? await res.json() : [] }); }
 }));
