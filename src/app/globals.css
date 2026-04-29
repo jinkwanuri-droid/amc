@@ -6,14 +6,21 @@
 
 body {
   font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-  background: 
-    radial-gradient(at 0% 0%, hsla(217, 100%, 94%, 1) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(210, 100%, 92%, 1) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, hsla(220, 100%, 95%, 1) 0px, transparent 50%);
+  background: radial-gradient(at 0% 0%, hsla(217, 100%, 94%, 1) 0px, transparent 50%), radial-gradient(at 100% 0%, hsla(210, 100%, 92%, 1) 0px, transparent 50%), radial-gradient(at 100% 100%, hsla(220, 100%, 95%, 1) 0px, transparent 50%);
   background-color: #f1f5f9;
   background-attachment: fixed;
   color: #333;
 }
+
 input, textarea, select, button {
   font-family: inherit;
+}
+
+/* 스크롤바 숨기기 (어긋남 방지) */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
