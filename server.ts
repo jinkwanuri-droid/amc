@@ -14,8 +14,37 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Memory Fallback Storage
+  let memoryReservations: any[] = [];
+  let memoryRooms: any[] = [
+    { 
+      id: 'room_10f', name: '10층', capacity: 8, 
+      color: 'indigo', header_bg: 'bg-indigo-500', accent_bg: 'bg-indigo-50/50', 
+      border_color: 'border-indigo-200', text_color: 'text-indigo-700', order: 1 
+    },
+    { 
+      id: 'room_9f', name: '9층', capacity: 12, 
+      color: 'emerald', header_bg: 'bg-emerald-500', accent_bg: 'bg-emerald-50/50', 
+      border_color: 'border-emerald-200', text_color: 'text-emerald-700', order: 2 
+    },
+    { 
+      id: 'room_8f_l', name: '8층(대)', capacity: 12, 
+      color: 'rose', header_bg: 'bg-rose-500', accent_bg: 'bg-rose-50/50', 
+      border_color: 'border-rose-200', text_color: 'text-rose-700', order: 3 
+    },
+    { 
+      id: 'room_8f_s', name: '8층(소)', capacity: 6, 
+      color: 'amber', header_bg: 'bg-amber-500', accent_bg: 'bg-amber-50/50', 
+      border_color: 'border-amber-200', text_color: 'text-amber-700', order: 4 
+    },
+  ];
+  let memoryHolidays: any[] = [];
+
+  const isDbConnected = !!(process.env.DATABASE_URL || process.env.POSTGRES_URL);
+
   // Initialize Postgres Tables
   const initDb = async () => {
+    if (!isDbConnected) return;
     try {
       await db.execute(sql`
         CREATE TABLE IF NOT EXISTS reservations (
@@ -55,29 +84,8 @@ async function startServer() {
       // Seed Initial Rooms if empty
       const existingRooms = await db.select().from(rooms);
       if (existingRooms.length === 0) {
-        await db.insert(rooms).values([
-          { 
-            id: 'room_10f', name: '10층', capacity: 8, 
-            color: 'indigo', header_bg: 'bg-indigo-500', accent_bg: 'bg-indigo-50/50', 
-            border_color: 'border-indigo-200', text_color: 'text-indigo-700', order: 1 
-          },
-          { 
-            id: 'room_9f', name: '9층', capacity: 12, 
-            color: 'emerald', header_bg: 'bg-emerald-500', accent_bg: 'bg-emerald-50/50', 
-            border_color: 'border-emerald-200', text_color: 'text-emerald-700', order: 2 
-          },
-          { 
-            id: 'room_8f_l', name: '8층(대)', capacity: 12, 
-            color: 'rose', header_bg: 'bg-rose-500', accent_bg: 'bg-rose-50/50', 
-            border_color: 'border-rose-200', text_color: 'text-rose-700', order: 3 
-          },
-          { 
-            id: 'room_8f_s', name: '8층(소)', capacity: 6, 
-            color: 'amber', header_bg: 'bg-amber-500', accent_bg: 'bg-amber-50/50', 
-            border_color: 'border-amber-200', text_color: 'text-amber-700', order: 4 
-          },
-        ]);
-        console.log("Rooms seeded");
+        await db.insert(rooms).values(memoryRooms);
+        console.log("Rooms seeded to Postgres");
       }
 
       console.log("Postgres tables initialized via Drizzle");
@@ -86,11 +94,7 @@ async function startServer() {
     }
   };
   
-  if (process.env.DATABASE_URL || process.env.POSTGRES_URL) {
-    initDb();
-  } else {
-    console.warn("Database URL is missing. Database operations will fail.");
-  }
+  initDb();
 
   // API Routes
   
@@ -118,25 +122,23 @@ async function startServer() {
     clients.forEach(c => c.write(`data: update\n\n`));
   };
 
-  // Helper to get reservations from Postgres
-  const getReservations = async () => {
-    try {
-      if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL) {
-        console.warn("Database environment variables are missing.");
-        return [];
-      }
-      return await db.query.reservations.findMany({
-        orderBy: (res, { asc }) => [asc(res.start_time)],
-      });
-    } catch (e) {
-      console.error("Drizzle Fetch Error:", e);
-      return [];
-    }
-  };
+  app.get('/api/debug', (req, res) => {
+    res.json({
+      databaseConnected: isDbConnected,
+      env: process.env.NODE_ENV,
+      dbProvider: isDbConnected ? 'Postgres/Neon' : 'In-Memory (Demo Mode)'
+    });
+  });
 
+  // Reservoir handlers
   app.get('/api/reservations', async (req, res) => {
     try {
-      const all = await getReservations();
+      if (!isDbConnected) {
+        return res.json(memoryReservations);
+      }
+      const all = await db.query.reservations.findMany({
+        orderBy: (res, { asc }) => [asc(res.start_time)],
+      });
       res.json(all);
     } catch (e: any) {
       res.status(500).json({ error: e.message });
@@ -146,6 +148,9 @@ async function startServer() {
   // Room Endpoints
   app.get('/api/rooms', async (req, res) => {
     try {
+      if (!isDbConnected) {
+        return res.json(memoryRooms.sort((a, b) => a.order - b.order));
+      }
       const allRooms = await db.select().from(rooms).orderBy(asc(rooms.order));
       res.json(allRooms);
     } catch (e: any) {
@@ -157,6 +162,15 @@ async function startServer() {
     try {
       const roomData = req.body;
       if (!roomData.id) roomData.id = crypto.randomUUID();
+      
+      if (!isDbConnected) {
+        const idx = memoryRooms.findIndex(r => r.id === roomData.id);
+        if (idx >= 0) memoryRooms[idx] = roomData;
+        else memoryRooms.push(roomData);
+        broadcastUpdate();
+        return res.json({ success: true });
+      }
+
       await db.insert(rooms).values(roomData).onConflictDoUpdate({
         target: rooms.id,
         set: roomData
@@ -170,6 +184,11 @@ async function startServer() {
 
   app.delete('/api/rooms/:id', async (req, res) => {
     try {
+      if (!isDbConnected) {
+        memoryRooms = memoryRooms.filter(r => r.id !== req.params.id);
+        broadcastUpdate();
+        return res.json({ success: true });
+      }
       await db.delete(rooms).where(eq(rooms.id, req.params.id));
       broadcastUpdate();
       res.json({ success: true });
@@ -181,6 +200,9 @@ async function startServer() {
   // Holiday Endpoints
   app.get('/api/holidays', async (req, res) => {
     try {
+      if (!isDbConnected) {
+        return res.json(memoryHolidays.sort((a, b) => a.date.localeCompare(b.date)));
+      }
       const allHolidays = await db.select().from(customHolidays).orderBy(asc(customHolidays.date));
       res.json(allHolidays);
     } catch (e: any) {
@@ -192,6 +214,13 @@ async function startServer() {
     try {
       const { date, name } = req.body;
       const id = crypto.randomUUID();
+      
+      if (!isDbConnected) {
+        memoryHolidays.push({ id, date, name });
+        broadcastUpdate();
+        return res.json({ success: true, id });
+      }
+
       await db.insert(customHolidays).values({ id, date, name });
       broadcastUpdate();
       res.json({ success: true, id });
@@ -202,6 +231,11 @@ async function startServer() {
 
   app.delete('/api/holidays/:id', async (req, res) => {
     try {
+      if (!isDbConnected) {
+        memoryHolidays = memoryHolidays.filter(h => h.id !== req.params.id);
+        broadcastUpdate();
+        return res.json({ success: true });
+      }
       await db.delete(customHolidays).where(eq(customHolidays.id, req.params.id));
       broadcastUpdate();
       res.json({ success: true });
@@ -214,6 +248,20 @@ async function startServer() {
     const { room_id, reserver, description, start_time, end_time } = req.body;
     
     try {
+      if (!isDbConnected) {
+        const overlap = memoryReservations.filter(r => 
+          r.room_id === room_id &&
+          new Date(r.start_time) < new Date(end_time) &&
+          new Date(r.end_time) > new Date(start_time)
+        );
+        if (overlap.length > 0) return res.status(409).json({ error: "해당 시각에는 이미 예약이 있습니다." });
+        
+        const id = crypto.randomUUID();
+        memoryReservations.push({ id, room_id, reserver, description, start_time, end_time });
+        broadcastUpdate();
+        return res.status(201).json({ success: true, id });
+      }
+
       // Check for overlap using Drizzle
       const overlap = await db.query.reservations.findMany({
         where: and(
@@ -249,6 +297,21 @@ async function startServer() {
     const { id } = req.params;
     
     try {
+      if (!isDbConnected) {
+        const overlap = memoryReservations.filter(r => 
+          r.id !== id &&
+          r.room_id === room_id &&
+          new Date(r.start_time) < new Date(end_time) &&
+          new Date(r.end_time) > new Date(start_time)
+        );
+        if (overlap.length > 0) return res.status(409).json({ error: "해당 시각에는 이미 예약이 있습니다." });
+        
+        const idx = memoryReservations.findIndex(r => r.id === id);
+        if (idx >= 0) memoryReservations[idx] = { id, room_id, reserver, description, start_time, end_time };
+        broadcastUpdate();
+        return res.json({ success: true });
+      }
+
       // Check for overlap (excluding current reservation) using Drizzle
       const overlap = await db.query.reservations.findMany({
         where: and(
@@ -283,6 +346,11 @@ async function startServer() {
   app.delete('/api/reservations/:id', async (req, res) => {
     const { id } = req.params;
     try {
+      if (!isDbConnected) {
+        memoryReservations = memoryReservations.filter(r => r.id !== id);
+        broadcastUpdate();
+        return res.json({ success: true });
+      }
       await db.delete(reservations).where(eq(reservations.id, id));
       broadcastUpdate();
       res.json({ success: true });
