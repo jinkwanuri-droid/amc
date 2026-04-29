@@ -44,6 +44,12 @@ export const TIME_SLOTS = Array.from({ length: 23 }).map((_, i) => {
 });
 
 // --- API Functions ---
+export const fetchDebugInfo = async () => {
+  const res = await fetch('/api/debug');
+  if (!res.ok) return { databaseConnected: false, dbProvider: 'Unknown' };
+  return res.json();
+};
+
 export const fetchReservations = async (roomId: string): Promise<Reservation[]> => {
   const res = await fetch(`/api/reservations?roomId=${roomId}`);
   if (!res.ok) throw new Error('Failed to fetch reservations');
