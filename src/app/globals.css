@@ -1,26 +1,17 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@tailwind base; @tailwind components; @tailwind utilities;
 
 body {
-  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-  background: radial-gradient(at 0% 0%, hsla(217, 100%, 94%, 1) 0px, transparent 50%), radial-gradient(at 100% 0%, hsla(210, 100%, 92%, 1) 0px, transparent 50%), radial-gradient(at 100% 100%, hsla(220, 100%, 95%, 1) 0px, transparent 50%);
-  background-color: #f1f5f9;
-  background-attachment: fixed;
-  color: #333;
+  font-family: "Pretendard Variable", Pretendard, sans-serif;
+  /* 글래스모피즘 극대화를 위한 다채로운 파스텔톤 메시 그라데이션 */
+  background: 
+    radial-gradient(at 0% 0%, hsla(217, 100%, 92%, 1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(280, 80%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(200, 100%, 90%, 1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(260, 100%, 94%, 1) 0px, transparent 50%);
+  background-color: #eef2ff;
+  background-attachment: fixed; color: #333;
 }
-
-input, textarea, select, button {
-  font-family: inherit;
-}
-
-/* 스크롤바 숨기기 (어긋남 방지) */
-.hide-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-.hide-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
-}
+input, textarea, select, button { font-family: inherit; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
